@@ -1,0 +1,11 @@
+state_occupancy timeint True
+state_transitions timeint True
+max_abs_growthrate timeint True
+max_abs_growthrate_percent timeint True
+longest_bout timeint False
+state_occupancy prepost True
+state_transitions prepost True
+max_abs_growthrate prepost True
+longest_bout prepost False
+start_time_longest_bout prepost False
+resilience resilience False

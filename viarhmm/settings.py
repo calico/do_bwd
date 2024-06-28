@@ -1,0 +1,17 @@
+# default values
+START_K = 2
+STOP_K = 11
+STEP_K = 1
+START_M = 1
+STOP_M = 2
+STEP_M = 1
+MIN_LEN = 6
+TRAIN_FRACTION = 0.7
+LEN_THRESHOLD = 70
+SEED = 8
+L1_TREND = False
+TRIM_PRE = False
+MODEL_DIR = 'models/all_models'
+DB_NAME = 'data/body_weight.raw.pkl'
+ERR_SIGMA = 2.0
+MAX_SEED = 10
