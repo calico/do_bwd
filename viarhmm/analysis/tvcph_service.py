@@ -5,6 +5,8 @@ import numpy as np
 import pandas as pd
 import pickle
 from lifelines import CoxTimeVaryingFitter
+from lifelines.utils import concordance_index
+from sklearn.model_selection import train_test_split
 
 sys.path.append(os.getcwd())
 
@@ -125,31 +127,90 @@ def parse_args():
   return args
 
 
-def fit_tvcph(df_tvcph, penalizer=0.0):
+def fit_tvcph(df_tvcph):
   """Fit time varying Cox PH model
 
   Args:
       df_tvcph (pandas): dataframe crafted for tvcph model
-      penalizer (float, optional): regularizer. Defaults to None.
 
   Returns:
       tvcph (object): contains fitted model parameters
+      status (bool): True if model was fitted, False otherwise
   """
   # set defaul status
   status = True
 
-  # fit tvcph
+  # Get unique mice with their diet
+  unique_mice = df_tvcph[['mouse_id', 'diet']].drop_duplicates()
+
+  # Stratified train-test split based on diet
+  train_ids, val_ids = train_test_split(
+      unique_mice['mouse_id'], 
+      test_size=0.2, 
+      random_state=42, 
+      stratify=unique_mice['diet']
+  )
+
+  # Subset the full dataset based on train and validation IDs
+  train_df = df_tvcph[df_tvcph['mouse_id'].isin(train_ids)]
+  val_df = df_tvcph[df_tvcph['mouse_id'].isin(val_ids)]
+
+  # Verify the distribution of diets in both sets
+  print("Diet distribution in training set:")
+  print(train_df['diet'].value_counts())
+  train_df = train_df.drop(columns=["diet"])
+
+  print("\nDiet distribution in validation set:")
+  print(val_df['diet'].value_counts())
+  val_df = val_df.drop(columns=["diet"])
+
+  # Range of penalizer values to test
+  penalizer_values = np.logspace(-4, 1, 10)
+
+  # Dictionary to store penalizer and corresponding c-index
+  results = {}
+
+  for penalizer in penalizer_values:
+    # Fit the model with the current penalizer
+    ctv = CoxTimeVaryingFitter(penalizer=penalizer)
+    ctv.fit(train_df,
+            id_col="mouse_id",
+            event_col="status",
+            start_col="start",
+            stop_col="stop",
+            show_progress=True)
+    
+    # Predict partial hazard on validation set
+    partial_hazard = ctv.predict_partial_hazard(val_df)
+    
+    # Calculate c-index on validation set
+    c_index = concordance_index(
+        val_df['stop'],  # Observed times
+        -partial_hazard.squeeze(),  # Negative hazards for proper concordance calculation
+        val_df['status']             # Event indicators
+    )
+    results[penalizer] = c_index
+
+  # Find the best penalizer
+  best_penalizer = max(results, key=results.get)
+
+  # Print results
+  print("Penalizer values and corresponding c-index:")
+  for penalizer, c_index in results.items():
+    print(f"Penalizer: {penalizer}, C-index: {c_index}")
+  print(f"\nBest penalizer: {best_penalizer}, Highest C-index: {results[best_penalizer]}")
+
+  # Fit the model with the best penalizer
+  df_tvcph = df_tvcph.drop(columns=["diet"])
+  tvcph = CoxTimeVaryingFitter(penalizer=best_penalizer)
   try:
-    if penalizer:
-      tvcph = CoxTimeVaryingFitter(penalizer=penalizer)
-    else:
-      tvcph = CoxTimeVaryingFitter()
-    tvcph.fit(df_tvcph, 
-              id_col="mouse_id", 
-              event_col="status", 
-              start_col="start", 
-              stop_col="stop", 
+    tvcph.fit(df_tvcph,
+              id_col="mouse_id",
+              event_col="status",
+              start_col="start",
+              stop_col="stop",
               show_progress=True)
+    tvcph.print_summary()
   except ValueError:
     print("\n Could not compute TVCPH.")
     status = False
@@ -190,8 +251,6 @@ def fit_survival(model_dir,
       model_type (_type_): _description_
       verbose (_type_): _description_
   """
-  # penalizer
-  penalizer = 0.00001
 
   # cached model name
   cached_model_filename = mode + '_' + phenotype_name
@@ -287,7 +346,7 @@ def fit_survival(model_dir,
         raise ValueError("Mode not found!")
 
       # fit tvcph
-      tvcph_model, status = fit_tvcph(df_tvcph, penalizer=penalizer)
+      tvcph_model, status = fit_tvcph(df_tvcph)
       save_params(phenotype_list, 
                   tvcph_model,
                   status,
