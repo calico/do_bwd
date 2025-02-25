@@ -29,9 +29,9 @@ MODEL_DIR = './finemap_parallel'
 VERBOSE = False
 
 ## location of phenotypes files
-PREPOST_PHENOTYPE_FILE = 'data/prepost.csv'
-TIMEINT_PHENOTYPE_FILE = 'data/timeint.csv'
-RESILEN_PHENOTYPE_FILE = 'data/resilience.csv'
+PREPOST_PHENOTYPE_FILE = 'data/prepost_v1.csv'
+TIMEINT_PHENOTYPE_FILE = 'data/timeint_v1.csv'
+RESILEN_PHENOTYPE_FILE = 'data/resilience_v1.csv'
 
 ## location of genetics files
 CHALLENGE_FILE = 'data/age_phenotype.csv'

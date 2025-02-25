@@ -23,11 +23,11 @@ warnings.filterwarnings("ignore")
 
 
 LS_FILEPATH = 'data/lifespan.csv'
-TIMEINT_FILEPATH = 'data/timeint.csv'
-PREPOST_FILEPATH = 'data/prepost.csv'
-RESILEN_FILEPATH = 'data/resilience.csv'
+TIMEINT_FILEPATH = 'data/timeint_v1.csv'
+PREPOST_FILEPATH = 'data/prepost_v1.csv'
+RESILEN_FILEPATH = 'data/resilience_v1.csv'
 CH_FILEPATH = 'data/age_phenotype.csv'
-BW_FILEPATH = 'data/bodyweight.csv'
+BW_FILEPATH = 'data/bodyweight_v1.csv'
 MODEL_DIR = 'data/tvcph'
 PHENOTYPE_NAME = 'state_occupancy'
 
